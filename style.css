@@ -381,3 +381,9 @@ body.boardbody .fname, .fname { overflow: visible; }
 .hostbar, .gbtn { bottom: calc(1.05em + 2.6vh + 8px); }
 
 .drow .popbtn { justify-self: start; }
+
+/* debrief charts in the console */
+.chartgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.chartgrid figure { margin: 0; }
+.chartgrid img { width: 100%; border: 1px solid var(--line); border-radius: 6px; }
+.chartgrid figcaption { font-size: 14px; color: var(--muted); margin-top: 4px; }

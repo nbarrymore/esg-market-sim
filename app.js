@@ -882,6 +882,9 @@
           <button id="json">Download game file</button>
           <button id="reset">New game</button></p>
           ${G.phase === "decide" ? `<p><button id="fill">Test: fill in random decisions for teams that have not submitted</button></p>` : ""}</section>
+        ${G.phase === "over" && G.history.length ? `<section><h2>Debrief charts</h2>
+          <p><button id="mkcharts" class="primary">Make debrief charts</button> <span class="sub">16:9 pictures for your slides, from this game's history. They stay on this laptop until you download them.</span></p>
+          <div id="charts" class="chartgrid"></div></section>` : ""}
         <section><h2>Rounds</h2><table class="data"><tr><th>Round</th><th>Tax in force</th></tr>
           ${G.rounds.map((r, i) => `<tr class="${i === G.round ? "student" : ""}"><td>${esc(r.label)}</td><td>${(G.history.find((h) => h.round === i) || {}).tax ? "$" + (G.history.find((h) => h.round === i) || {}).tax : ""}</td></tr>`).join("")}</table></section>
         ${headlines(G)}`;
@@ -912,6 +915,15 @@
         keep.forEach((f) => E.addFund(G, f.id, f.spec, f.stickers));
         G.round = 1; G.phase = "decide"; snaps = [];
         await publish(); await loadRound(); console_();
+      });
+      on("mkcharts", () => {
+        const list = window.ESGCharts ? window.ESGCharts.make(G) : [];
+        const box = document.getElementById("charts");
+        box.innerHTML = list.length ? list.map((c) => `<figure><img src="${c.url}" alt="${esc(c.title)}"><figcaption><b>${esc(c.title)}</b><br>${esc(c.note)}<br>
+          <a href="${c.url}" download="esg-${esc(session)}-${c.name}.png">Download</a></figcaption></figure>`).join("")
+          + `<p><button id="dlall">Download all</button></p>` : "<p>No rounds played.</p>";
+        const all = document.getElementById("dlall");
+        if (all) all.onclick = () => box.querySelectorAll("a[download]").forEach((a, i) => setTimeout(() => a.click(), 400 * i));
       });
       on("csv", () => download(`esg-${session}.csv`, toCSV(G), "text/csv"));
       on("json", () => download(`esg-${session}.json`, JSON.stringify(G), "application/json"));

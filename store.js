@@ -7,7 +7,9 @@
 (function (root) {
   "use strict";
   const cfg = root.ESG_CONFIG || {};
-  const remote = !!(cfg.supabaseUrl && cfg.supabaseAnonKey && root.supabase);
+  // ?local=1 forces local mode (the test lab): tabs in this browser only, nothing sent.
+  const forceLocal = new URLSearchParams(root.location ? root.location.search : "").get("local") === "1";
+  const remote = !forceLocal && !!(cfg.supabaseUrl && cfg.supabaseAnonKey && root.supabase);
 
   function Store(session) {
     this.session = session;

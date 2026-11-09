@@ -862,14 +862,14 @@
         ${pub.campaigns.filter((c) => c.status === "pending").length ? `<p>Campaigns to answer this year: ${pub.campaigns.filter((c) => c.status === "pending").map((c) => `${esc(c.fundName)} → ${esc(c.name)} (${esc(c.text)})`).join("; ")}</p>` : ""}</section>
         <section><h2>Control</h2>
           ${G.phase === "decide" ? `<button id="resolve" class="primary">Play ${esc(roundCfg(G).label)}</button>` : "<p>The game is over. The projector now shows the hidden odds.</p>"}
-          <p><button id="undo" ${snaps.length ? "" : "disabled"}>Undo last year</button>
-          ${G.history.length && G.history[0].round === 0 && G.round === 1 ? '<button id="restart">Start Year 1 fresh (after practice)</button>' : ""}
+          <p><button id="undo" ${snaps.length ? "" : "disabled"}>Undo last round</button>
+          ${G.history.length && G.history[0].round === 0 && G.round === 1 ? '<button id="restart">Start Round 1 fresh (after practice)</button>' : ""}
           <button id="csv" ${G.history.length ? "" : "disabled"}>Download results (CSV)</button>
           <button id="json">Download game file</button>
           <button id="reset">New game</button></p>
           ${G.phase === "decide" ? `<p><button id="fill">Test: fill in random decisions for teams that have not submitted</button></p>` : ""}</section>
-        <section><h2>Years</h2><table class="data"><tr><th>Round</th><th>Everyone audited</th><th>Tax in force</th></tr>
-          ${G.rounds.map((r, i) => `<tr class="${i === G.round ? "student" : ""}"><td>${esc(r.label)}</td><td>${r.mandate ? "yes" : ""}</td><td>${(G.history.find((h) => h.round === i) || {}).tax ? "$" + (G.history.find((h) => h.round === i) || {}).tax : ""}</td></tr>`).join("")}</table></section>
+        <section><h2>Rounds</h2><table class="data"><tr><th>Round</th><th>Tax in force</th></tr>
+          ${G.rounds.map((r, i) => `<tr class="${i === G.round ? "student" : ""}"><td>${esc(r.label)}</td><td>${(G.history.find((h) => h.round === i) || {}).tax ? "$" + (G.history.find((h) => h.round === i) || {}).tax : ""}</td></tr>`).join("")}</table></section>
         ${headlines(G)}`;
       const on = (id, fn) => { const b = document.getElementById(id); if (b) b.onclick = fn; };
       on("resolve", playRound);

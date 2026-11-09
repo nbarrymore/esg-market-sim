@@ -379,3 +379,5 @@ body.boardbody .fname, .fname { overflow: visible; }
 
 /* lift controls clear of the ticker */
 .hostbar, .gbtn { bottom: calc(1.05em + 2.6vh + 8px); }
+
+.drow .popbtn { justify-self: start; }

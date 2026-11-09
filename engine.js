@@ -29,12 +29,17 @@
   "use strict";
 
   const DEFAULT_ROUNDS = [
-    { label: "Practice round", mandate: false },
+    // Up to 10 rounds; the instructor ends the game whenever time runs short.
     { label: "Round 1", mandate: false },
     { label: "Round 2", mandate: false },
     { label: "Round 3", mandate: false },
     { label: "Round 4", mandate: false },
     { label: "Round 5", mandate: false },
+    { label: "Round 6", mandate: false },
+    { label: "Round 7", mandate: false },
+    { label: "Round 8", mandate: false },
+    { label: "Round 9", mandate: false },
+    { label: "Round 10", mandate: false },
   ];
 
   const P = {
@@ -44,6 +49,7 @@
     Msector: { Energy: 8.5, Transportation: 9.5 },
     taxSteps: [0, 5, 10, 50, 100],     // carbon tax, $ per tonne: each time it passes it steps up one level
     taxHazard: [0.25, 0.15, 0.08, 0.04], // chance each round of the next step, by current level
+    taxHorizon: 5,         // rounds ahead the market looks when pricing the carbon tax
     studentShare: 0.3,     // ESG funds' share of the class companies' market value
     lambda: 0.06,          // price response to fund demand: -6% if no fund holds it, up to +6%
     demandCap: 2,          // fund demand counts up to 2x its neutral level
@@ -237,14 +243,13 @@
     return k;
   }
 
-  // Chance the tax is in force by the end of the game, from round `from` on
-  // (round 0, practice, does not count toward the game).
-  // Expected carbon tax ($ per tonne) at the end of the game, from round `from`
-  // on, given the current level. Each round the tax steps up with chance h.
+  // Expected carbon tax ($ per tonne) P.taxHorizon rounds ahead, given the current
+  // level. Each round the tax steps up with chance h. Nobody knows when the game
+  // ends, so the market always looks the same distance ahead.
   function expTax(rounds, from, level) {
     const steps = P.taxSteps, top = steps.length - 1;
-    let v = steps.map((x) => x);  // value at the end, by level
-    for (let i = rounds.length - 1; i >= Math.max(1, from); i--) {
+    let v = steps.map((x) => x);  // value at the horizon, by level
+    for (let i = 0; i < P.taxHorizon; i++) {
       v = v.map((x, L) => { const h = L < top ? P.taxHazard[L] : 0; return h * v[L + 1 > top ? top : L + 1] + (1 - h) * x; });
     }
     return v[level || 0];
@@ -253,7 +258,7 @@
   function taxOutlook(rounds, from, taxOn) {
     if (taxOn) return 1;
     let none = 1;
-    for (let i = Math.max(1, from); i < rounds.length; i++) none *= 1 - P.taxHazard[0];
+    for (let i = 0; i < P.taxHorizon; i++) none *= 1 - P.taxHazard[0];
     return 1 - none;
   }
 
@@ -651,6 +656,14 @@
     return g;
   }
 
+  // The instructor ends the game before the last round: campaigns still waiting
+  // for an answer lapse, and the hidden odds are revealed.
+  function endGame(g) {
+    g.campaigns.filter((c) => c.status === "pending").forEach((c) => { c.status = "lapsed"; });
+    g.phase = "over";
+    return g;
+  }
+
   // [long form for team screens, newspaper headline]
   const STORIES = {
     E: [["a chemical leak near one of its sites", "Chemical Leak at {N} Site"],
@@ -728,7 +741,7 @@
     };
   }
 
-  const api = { DEFAULT_ROUNDS, P, newGame, addFund, resolveRound, publicState, scoreFund, regrade, holdCount, valuePerDollar,
+  const api = { DEFAULT_ROUNDS, P, newGame, addFund, resolveRound, endGame, publicState, scoreFund, regrade, holdCount, valuePerDollar,
     fundamental, expectedProfit, taxOutlook, expTax, cleanFirmDecision, cutCost, fightOdds, percentile, letterGrades, campaignText };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.ESG = api;

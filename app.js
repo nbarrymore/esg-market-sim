@@ -481,7 +481,7 @@
   // happened), a ticker (the market, then campaigns under way), and calm boxes.
   // The grades table appears on demand (button or the G key) and grays out the rest.
   const PAPERS = ["The Daily Ledger", "Market Herald", "The Evening Post"];
-  const roundName = (S, i) => (i === 0 ? "Practice round" : `Round ${i} of ${S.rounds.length - 1}`);
+  const roundName = (S, i) => `Round ${i + 1}`;
   const ARR = { up: "▲", down: "▼", flat: "■" };
 
   function shorthand(S, f) {
@@ -573,7 +573,13 @@
       const miss = [...hs.missingFirms, ...hs.missingFunds];
       el.innerHTML = `<span class="tip tipr hbcounts">Submitted: Companies ${hs.firmsIn}/${hs.firmsN} · Funds ${hs.fundsIn}/${hs.fundsN} · Investors ${hs.investorsIn}/${hs.investorsN}
           <span class="tipbox"><b>${miss.length ? "Still to submit" : "Every team has submitted"}</b>${miss.length ? `<div class="tipnote">${miss.map(esc).join(", ")}</div>` : ""}</span></span>
-        <button id="hbplay" class="hbplay">Play ${esc(hs.label)}</button>`;
+        <button id="hbplay" class="hbplay">Play ${esc(hs.label)}</button>${hs.round > 0 ? ' <button id="hbend" class="hbplay">End game</button>' : ""}`;
+      const endb = document.getElementById("hbend");
+      if (endb) endb.onclick = () => {
+        if (!confirm(`End the game now, before ${hs.label}? The projector shows the final results and the hidden odds.`)) return;
+        endb.disabled = true;
+        chan.postMessage({ type: "end", round: hs.round });
+      };
       document.getElementById("hbplay").onclick = () => {
         const left = [hs.firmsN - hs.firmsIn ? `${hs.firmsN - hs.firmsIn} ${hs.firmsN - hs.firmsIn === 1 ? "company hasn't" : "companies haven't"} submitted. They'll make no changes.` : "",
           hs.fundsN - hs.fundsIn ? `${hs.fundsN - hs.fundsIn} ${hs.fundsN - hs.fundsIn === 1 ? "fund hasn't" : "funds haven't"} submitted. They'll keep their settings.` : ""].filter(Boolean);
@@ -712,10 +718,18 @@
         console_();
       } finally { playing = false; }
     }
+    async function endNow() {
+      if (!G || G.phase !== "decide") return;
+      snaps.push(JSON.stringify(G));
+      E.endGame(G);
+      await publish();
+      console_();
+    }
     if (chan) chan.onmessage = (m) => {
       const d = m.data || {};
       if (d.type === "ping") broadcast();
       if (d.type === "play" && G && d.round === G.round) playRound();
+      if (d.type === "end" && G && d.round === G.round) endNow();
     };
 
     // A game saved before fund scores existed: republish once so students see them.
@@ -863,7 +877,7 @@
         <section><h2>Control</h2>
           ${G.phase === "decide" ? `<button id="resolve" class="primary">Play ${esc(roundCfg(G).label)}</button>` : "<p>The game is over. The projector now shows the hidden odds.</p>"}
           <p><button id="undo" ${snaps.length ? "" : "disabled"}>Undo last round</button>
-          ${G.history.length && G.history[0].round === 0 && G.round === 1 ? '<button id="restart">Start Round 1 fresh (after practice)</button>' : ""}
+          ${G.phase === "decide" && G.round > 0 ? '<button id="endgame">End the game now</button>' : ""}
           <button id="csv" ${G.history.length ? "" : "disabled"}>Download results (CSV)</button>
           <button id="json">Download game file</button>
           <button id="reset">New game</button></p>
@@ -873,6 +887,7 @@
         ${headlines(G)}`;
       const on = (id, fn) => { const b = document.getElementById(id); if (b) b.onclick = fn; };
       on("resolve", playRound);
+      on("endgame", () => { if (confirm("End the game now? The projector shows the final results and the hidden odds.")) endNow(); });
       broadcast();
       on("fill", fillRandom);
       document.querySelectorAll("button.relf").forEach((b) => { b.onclick = async () => {

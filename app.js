@@ -800,10 +800,13 @@
       };
       function drawCfg() {
         if (!params || !specs.length) { el("cfg").innerHTML = `<p class="sub">${params ? "" : "Company file not loaded. "}${specs.length ? "" : "No rating sheets loaded."}</p>`; return; }
-        el("cfg").innerHTML = `<p>3. ESG investment funds: tick the ones that won the sticker vote and enter their sticker counts (they set starting money).</p>
+        // Rules files from a section's sim/ folder carry "stickers": tick those funds and fill in the counts.
+        const st = (s) => Math.max(0, Math.round(+s.stickers || 0));
+        const anySt = specs.some((s) => st(s) > 0);
+        el("cfg").innerHTML = `<p>3. ESG investment funds: tick the ones that won the sticker vote and enter their sticker counts (they set starting money).${anySt ? " Filled in from the files; check them." : ""}</p>
           <table class="data"><tr><th>Fund</th><th>In the game</th><th>Stickers</th></tr>
-          ${specs.map((s, i) => `<tr><td>${esc(s.fund_name || "Group " + (i + 1))}</td><td><input type="checkbox" class="fin" data-i="${i}" ${i < 4 ? "checked" : ""}></td>
-            <td><input type="number" class="fst" data-i="${i}" min="0" value="0"></td></tr>`).join("")}</table>
+          ${specs.map((s, i) => `<tr><td>${esc(s.fund_name || "Group " + (i + 1))}</td><td><input type="checkbox" class="fin" data-i="${i}" ${(anySt ? st(s) > 0 : i < 4) ? "checked" : ""}></td>
+            <td><input type="number" class="fst" data-i="${i}" min="0" value="${st(s)}"></td></tr>`).join("")}</table>
           <p>4. Companies run by CEO teams.</p>
           <div class="scroll" style="max-height:260px"><table class="data"><tr><th>Company</th><th>Industry</th><th>CEO team</th></tr>
           ${params.firms.map((f, i) => `<tr><td>${esc(f.name)}</td><td>${esc(f.sector)}</td><td><input type="checkbox" class="ceo" data-i="${i}" ${f.ceo ? "checked" : ""}></td></tr>`).join("")}</table></div>
